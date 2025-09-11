@@ -6,7 +6,7 @@ output: html_document
 
 ## Name
 
-Please enter your name here.
+Vijetha Ramdas
 
 ### Setup
 
@@ -15,7 +15,8 @@ Read in the data with `read_csv()` and store the data as an R object named `data
 
 ```{r}
 ## Load the data and any necessary packages here.
-
+library(tidyverse)
+df <- read_csv("../maacs.csv.gz")
 ```
 
 ## Part 1
@@ -32,7 +33,16 @@ NOTE: For this part, do not use any plots.
 
 ```{r}
 ## Write your function here
+test_statement <- function(df) {
+  lmodel <- lm(fev1 ~ age, data = df)
+  slope <- coef(lmodel)[["age"]]
+  if (slope > .05) {
+    return(TRUE)}
+  else{
+    return(FALSE)}
+}
 
+test_statement(df)
 ```
 
 
@@ -42,9 +52,13 @@ Fit a linear regression model with FEV1 as the outcome and age as a predictor.
 
 How much does FEV1 change for a 1-year increase in the child's age? 
 
+For a one year increase in the child's age, FEV1 increases by 0.171162 L.
+
 ```{r}
 ## Add your code here
 
+model <- lm(fev1 ~ age, data = df)
+summary(model)
 ```
 
 
@@ -60,7 +74,12 @@ NOTE: At least one supporting premise should use a plot.
 
 ```{r}
 ## Add your code here
+ggplot(df) +
+  geom_point(aes(x = age, y = fev1)) +
+  labs(x = "Age", y = "FEV1 (L)")
 
+ggplot(df) +
+  geom_boxplot(aes(x = fev1, y = age))
 ```
 
 
