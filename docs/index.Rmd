@@ -2,7 +2,7 @@
 title: "Homework 2 Report"
 output:
   html_document: default
-  pdf_document: default
+  pdataset_document: default
 ---
 
 
@@ -18,7 +18,10 @@ Read in the data with `read_csv()` and store the data as an R object named `data
 ```{r}
 ## Load the data and any necessary packages here.
 library(tidyverse)
-df <- read_csv("../maacs.csv.gz")
+dataset <- read_csv("../maacs.csv.gz")
+head(dataset)
+tail(dataset)
+nrow(dataset)
 ```
 
 ## Part 1
@@ -36,28 +39,28 @@ NOTE: For this part, do not use any plots.
 ```{r}
 ## Write your function here
 
-test_statement <- function(df) {
-  mid <- df$age |> median()
-  df = df |>
+test_statement <- function(dataset) {
+  # Find the median age to split into the old and young groups
+  mid <- dataset$age |> median() 
+  dataset = dataset |>
     mutate(group = ifelse(age >= mid, "Old", "Young"))
   
-  older_children_mean <- df |> 
-    filter(group == "Old") |> 
-    summarise(mean(fev1, na.rm = TRUE))
- 
-  younger_children_mean <- df |> 
-    filter(group == "Young") |> 
+  # Calculate the mean for each group 
+  mean_table <- dataset |> 
+    group_by(group) |>
     summarise(mean(fev1, na.rm = TRUE))
   
-  mean_diff <- older_children_mean - younger_children_mean
-  
+  # Calculate the difference between groups
+  mean_diff <- mean_table[1,2] - mean_table[2,2]
+
+  # Return True if the Old group has a higher mean by at least .5
   if (mean_diff > .5) {
     return(TRUE)}
   else{
     return(FALSE)}
 }
 
-test_statement(df)
+test_statement(dataset)
 
 ```
 
@@ -72,8 +75,8 @@ How much does FEV1 change for a 1-year increase in the child's age?
 ```{r}
 ## Add your code here
 
-model <- lm(fev1 ~ age, data = df)
-summary(model)
+model <- lm(fev1 ~ age, data = dataset)
+summary(model)  # view the model coefficient/results
 ```
 
 
@@ -89,36 +92,40 @@ NOTE: At least one supporting premise should use a plot.
 
 ```{r}
 ## Add your code here
-mid <- df$age |> median()
+
+# find the median age to define the Old and Young group
+mid <- dataset$age |> median()
 print(mid)
 
-df = df |>
+dataset = dataset |>
   mutate(group = ifelse(age >= mid, "Old", "Young"))
   
-ggplot(df) +
+# Premise 1: scatterplot between age and fev1
+ggplot(dataset) +
   geom_point(aes(x = age, y = fev1)) +
   labs(x = "Age", y = "FEV1 (L)")
 
-ggplot(df) +
+# Premise 2: boxplot of fev1 distribution split by age group
+ggplot(dataset) +
   geom_boxplot(aes(x = fev1, y = group)) +
   labs(x = "FEV1 (L)", y = "Age Group")
 
-ggplot(df) +
+# Premise 3: histogram of fev1 distribution split by age group
+ggplot(dataset) +
   geom_histogram(aes(x = fev1), bins = 15) +
   facet_wrap(~ group, nrow = 2) +
-  labs(x = 'Count', y = "FEV1 (L)")
+  labs(x = "FEV1 (L)", y = "Count")
 ```
 
 
 
 Write the three supporting premise statements here:
 
-1. 
+1. On the scatterplot, children with higher ages tend to also have a higher FEV1 value. There is a clear positive association between the age and FEV1 variables on the plot.
 
-2. 
+2. The median FEV1 value of the younger age group box plot is lower than the median FEV1 value of the older age group. The boxplots are also relatively symmetric, and the entire range of FEV1 values for the younger group is lower than the median FEV1 value of the older age group.
 
-3. 
-
+3. The center of the histogram showing the FEV1 distribution of the younger group is lower than the center of the histogram showing the FEV1 distribution of the older group. The histograms are relatively symmetric, and only the older group has very high ouliers.
 
 ## Part 4
 
@@ -134,16 +141,18 @@ For statements involving plots, instead of returning `TRUE` or `FALSE`, you func
 ```{r}
 set.seed(19)
 ## Function for supporting premise statement 1
-premise_1 <- function(df){
-  real_plot <- ggplot(df) +
+premise_1 <- function(dataset){
+  # produce the original plot
+  real_plot <- ggplot(dataset) +
     geom_point(aes(x = age, y = fev1)) +
     labs(x = "Age", y = "FEV1 (L)")
 
-  # generate distribution
-  x = runif(150, min(df$age), max(df$age))
+  # generate distribution under the statement (positive relationship bewteen fev1 and age)
+  x = runif(150, min(dataset$age), max(dataset$age))
   y = .25*x + rnorm(75, 0, .5) 
- 
   fake_dist <- tibble(x, y)
+  
+  # produce the plot with the simulated data
   fake_plot <- ggplot(fake_dist) +
     geom_point(aes(x = x, y = y)) +
     labs(x = "Age", y = "FEV1 (L)")
@@ -152,21 +161,25 @@ premise_1 <- function(df){
   print(fake_plot)
 }
 
-premise_1(df)
+premise_1(dataset)
 ```
 
 
 ```{r}
 ## Function for supporting premise statement 2
-premise_2 <- function(df){
-  real_plot <- ggplot(df) +
+premise_2 <- function(dataset){
+  # produce the original plot
+  real_plot <- ggplot(dataset) +
   geom_boxplot(aes(x = fev1, y = group)) +
   labs(x = "FEV1 (L)", y = "Age Group")
   
+  # create the simulated data where Younger childer have a lower mean fev1 level than older children
   fake_data <- tibble(
-    x = c(rnorm(75, 1.3, .5), rnorm(75, 2.5, .35)),
+    x = c(rnorm(75, 1.3, .35), rnorm(75, 2.5, .35)),
     y = c(rep("Young", 75), rep("Old", 75))
   )
+  
+  # produce the plot with the simulated data
   fake_plot <- ggplot(fake_data) +
   geom_boxplot(aes(x = x, y = y)) +
   labs(x = "FEV1 (L)", y = "Age Group")
@@ -175,24 +188,26 @@ premise_2 <- function(df){
   print(fake_plot)
 }
 
-premise_2(df)
+premise_2(dataset)
 ```
 
 
 ```{r}
 ## Function for supporting premise statement 3
-premise_3 <- function(df){
-  real_plot <- ggplot(df) +
+premise_3 <- function(dataset){
+  # produce the original plot 
+  real_plot <- ggplot(dataset) +
   geom_histogram(aes(x = fev1), bins = 15) +
   facet_wrap(~ group, nrow = 2) +
   labs(x = 'Count', y = "FEV1 (L)")
   
-  # generate data
+  # create the simulated data where Younger childer have a lower mean fev1 level than older children
   fake_data <- tibble(
     x = c(rnorm(75, 1.3, .35), rnorm(75, 2.5, .35)),
     y = c(rep("Young", 75), rep("Old", 75))
   )
   
+  # produce the plot with the simulated data
   fake_plot <- ggplot(fake_data) +
   geom_histogram(aes(x = x), bins = 15) +
   facet_wrap(~ y, nrow = 2) +
@@ -202,13 +217,10 @@ premise_3 <- function(df){
   print(fake_plot)
 }
 
-premise_3(df)
+premise_3(dataset)
 ```
 
 Execute each of your function and show that the produce the expected output.
-
-
-
 
 ## Part 5
 
@@ -218,4 +230,4 @@ Create a fault tree for the alternative outcome describing how the alternative o
 
 Your fault tree should be created as a separate image and does not need to be created in R. Upload the image of the fault tree to Canvas.
 
-
+Alternative: FEV1 values in children are the same in older children and younger children.
